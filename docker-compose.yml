@@ -1,0 +1,81 @@
+version: '3'
+services:
+  gitlab:
+    image: 'gitlab/gitlab-ce:latest'
+    restart: always
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://localhost:7000/'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2223
+        nginx['listen_port'] = 80
+    ports:
+      - '7000:80'
+    volumes:
+      - './data/gitlab/config:/etc/gitlab'
+      - './data/gitlab/logs:/var/log/gitlab'
+      - './data/gitlab/data:/var/opt/gitlab'
+
+  pukiwiki:
+    image: pengo/pukiwiki
+    restart: unless-stopped
+    ports:
+      - 7001:80
+    volumes:
+     - ./data/pukiwiki:/ext
+
+  redmine:
+    image: redmine
+    restart: always
+    ports:
+      - 7002:3000
+    environment:
+      REDMINE_DB_MYSQL: redmine-db
+      REDMINE_DB_PASSWORD: example
+      REDMINE_SECRET_KEY_BASE: supersecretkey
+      REDMINE_DB_ENCODING: utf8mb4
+
+  webdav:
+    image: nextcloud
+    restart: always
+    ports:
+      - 7003:80
+    volumes:
+      - ./data/webdav/data:/var/www/html
+    environment:
+      MYSQL_ROOT_PASSWORD: supersecret
+      MYSQL_PASSWORD: supersecret
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_HOST: nextdb
+      NEXTCLOUD_ADMIN_USER: admin
+      NEXTCLOUD_ADMIN_PASSWORD: supersecret
+
+  redmine-db:
+    image: mysql:5.7
+    restart: always
+    volumes:
+     - ./data/redmine/db-store:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: redmine
+    command: ['mysqld', '--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']    
+
+  nextdb:
+    image: mariadb
+    restart: always
+    volumes:
+     - ./data/webdav/db-store:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: supersecret
+      MYSQL_PASSWORD: supersecret
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_HOST: 127.0.0.1:3306
+      NEXTCLOUD_ADMIN_USER: admin
+      NEXTCLOUD_ADMIN_PASSWORD: supersecret
+    ports:
+      - 7306:3306
+
+  
+
+  
